@@ -1,8 +1,10 @@
-package main
+package client
 
 import (
 	"context"
 	"fmt"
+
+	"github/situ2001.com/gitea-bulk-migration/common"
 
 	"github.com/google/go-github/v71/github"
 )
@@ -17,7 +19,7 @@ func NewGitHubClient(client *github.Client) *GitHubClient {
 	}
 }
 
-func (c *GitHubClient) GetAllGitHubRepoByUsername(username string) ([]*github.Repository, error) {
+func (c *GitHubClient) GetAllGitHubRepoByUsername(option *common.MigrationCliOption) ([]*github.Repository, error) {
 	repos := make([]*github.Repository, 0)
 	listOption := &github.ListOptions{
 		PerPage: 50,
@@ -26,8 +28,7 @@ func (c *GitHubClient) GetAllGitHubRepoByUsername(username string) ([]*github.Re
 
 	for {
 		sourcesRepo, resp, err := c.Repositories.ListByAuthenticatedUser(context.Background(), &github.RepositoryListByAuthenticatedUserOptions{
-			Type:        "all",
-			Sort:        "full_name",
+			Type:        option.TypeOfRepoBeingMigrated,
 			ListOptions: *listOption,
 		})
 

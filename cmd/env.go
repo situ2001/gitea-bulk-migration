@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ type EnvValues struct {
 	GithubToken string
 }
 
-func GetEnvValues() EnvValues {
+func GetEnvValues() *EnvValues {
 	giteaUrl := os.Getenv("GITEA_URL")
 	giteaToken := os.Getenv("GITEA_TOKEN")
 	githubToken := os.Getenv("GITHUB_TOKEN")
@@ -25,7 +25,23 @@ func GetEnvValues() EnvValues {
 		GithubToken: githubToken,
 	}
 
-	return envValues
+	return &envValues
+}
+
+func EnsureEnvValues() {
+	envValues := GetEnvValues()
+	if envValues.GiteaUrl == "" {
+		fmt.Println("GITEA_URL is not set")
+		os.Exit(1)
+	}
+	if envValues.GiteaToken == "" {
+		fmt.Println("GITEA_TOKEN is not set")
+		os.Exit(1)
+	}
+	if envValues.GithubToken == "" {
+		fmt.Println("GITHUB_TOKEN is not set")
+		os.Exit(1)
+	}
 }
 
 type InitEnvOptions struct {
@@ -43,6 +59,7 @@ func InitEnv(options *InitEnvOptions) {
 	err := godotenv.Load(options.EnvFile)
 	if err != nil {
 		fmt.Println("Error loading .env file")
+		os.Exit(1)
 	}
 
 	if options.Proxy != "" {
