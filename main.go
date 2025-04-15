@@ -1,23 +1,24 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"code.gitea.io/sdk/gitea"
 	"github.com/google/go-github/v71/github"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Read gitea URL and token from .env
-	err := godotenv.Load(".env")
-	if err != nil {
-		fmt.Println("Error loading .env file")
-	}
+	InitEnv(&InitEnvOptions{
+		EnvFile: ".env",
+		Proxy:   "http://192.168.114.3:7890",
+	})
 
-	giteaUrl := os.Getenv("GITEA_URL")
-	giteaToken := os.Getenv("GITEA_TOKEN")
+	envValues := GetEnvValues()
+	giteaUrl := envValues.GiteaUrl
+	giteaToken := envValues.GiteaToken
+	githubToken := envValues.GithubToken
 
 	// Gitea Client
 	giteaClient, err := gitea.NewClient(giteaUrl, gitea.SetToken(giteaToken))
@@ -33,11 +34,46 @@ func main() {
 	}
 
 	// print username and email
-	fmt.Println("Hello:")
+	fmt.Println("Hello, Gitea:")
 	fmt.Println("Username:", userInfo.UserName)
 	fmt.Println("Email:", userInfo.Email)
 
 	// GitHub Client
-	client := github.NewClient(nil)
-	println(client.BaseURL.String())
+	githubClient := NewGitHubClient(github.NewClientWithEnvProxy().WithAuthToken(githubToken))
+	println(githubClient.BaseURL.String())
+
+	// print username and email from GitHub
+	fmt.Printf("Hello, GitHub:")
+
+	repos, err := githubClient.GetAllGitHubRepoByUsername("situ2001")
+	if err != nil {
+		fmt.Println("GetAllOwnedGitHubRepoByUsername error", err)
+		os.Exit(1)
+	}
+
+	// get all non-forked repositories
+	nonForkedRepos := make([]*github.Repository, 0)
+	for _, repo := range repos {
+		if !*repo.Fork {
+			nonForkedRepos = append(nonForkedRepos, repo)
+		}
+	}
+	println("Total non-forked repositories:", len(nonForkedRepos))
+
+	// Serialize the nonForkedRepos to JSON, and save to ./repo-github.json
+	file, err := os.Create("./repo-github.json")
+	if err != nil {
+		fmt.Println("Error creating JSON file:", err)
+		return
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(nonForkedRepos); err != nil {
+		fmt.Println("Error encoding JSON:", err)
+		return
+	}
+	fmt.Println("Non-forked repositories saved to ./repo-github.json")
+
 }
