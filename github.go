@@ -32,7 +32,6 @@ func (c *GitHubClient) GetAllGitHubRepoByUsername(username string) ([]*github.Re
 		})
 
 		if err != nil {
-			fmt.Println("Error getting repositories:", err)
 			return nil, err
 		}
 
