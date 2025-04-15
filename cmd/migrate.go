@@ -57,7 +57,11 @@ func Execute() {
 		fmt.Println(githubClient)
 		fmt.Println(giteaClient)
 
-		reposUnderGiteaOwner, _ := giteaClient.ListUserReposAll(cliOpts.MigrationCliOption.GiteaOwner)
+		reposUnderGiteaOwner, err := giteaClient.ListUserReposAll(cliOpts.MigrationCliOption.GiteaOwner)
+		if err != nil {
+			fmt.Println("Error getting Gitea repos:", err)
+			os.Exit(1)
+		}
 		fmt.Println("Length of repos under Gitea owner:", len(reposUnderGiteaOwner))
 
 		return
