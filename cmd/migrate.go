@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github/situ2001.com/gitea-bulk-migration/client"
@@ -50,42 +51,99 @@ func Execute() {
 
 		giteaClient, err := client.NewGiteaClient(envValues.GiteaUrl, envValues.GiteaToken, &cliOpts.MigrationCliOption)
 		if err != nil {
-			fmt.Println("Error creating Gitea client:", err)
-			os.Exit(1)
+			log.Fatalln("Error creating Gitea client:", err)
 		}
 
-		fmt.Println(githubClient)
-		fmt.Println(giteaClient)
-
+		// Start fetching repos from Gitea
 		reposUnderGiteaOwner, err := giteaClient.ListUserReposAll(cliOpts.MigrationCliOption.GiteaOwner)
 		if err != nil {
-			fmt.Println("Error getting Gitea repos:", err)
-			os.Exit(1)
+			log.Fatalln("Error getting Gitea repos:", err)
 		}
-		fmt.Println("Length of repos under Gitea owner:", len(reposUnderGiteaOwner))
+		log.Println("Length of repos under Gitea owner:", len(reposUnderGiteaOwner))
+		repoStr := ""
+		for _, repo := range reposUnderGiteaOwner {
+			repoStr += repo.Name + ", "
+		}
+		log.Println(repoStr)
 
-		return
-
-		repos, err := githubClient.GetAllGitHubRepoByUsername(&cliOpts.MigrationCliOption)
+		// Start fetching repos from GitHub
+		reposUnderGithubOwner, err := githubClient.GetAllGitHubRepoByUsername(&cliOpts.MigrationCliOption)
 		if err != nil {
-			fmt.Println("Error getting GitHub repos:", err)
-			os.Exit(1)
+			log.Println("Error getting GitHub repos:", err)
 		}
+		log.Println("Length of repos under GitHub owner:", len(reposUnderGithubOwner))
+		repoStr = ""
+		for _, repo := range reposUnderGithubOwner {
+			repoStr += repo.GetName() + ", "
+		}
+		log.Println(repoStr)
 
 		// filtering repos
 		if !cliOpts.MigrationCliOption.ShouldMigrateForkedRepo {
 			// filter out forked repos
 			filteredRepos := make([]*github.Repository, 0)
-			for _, repo := range repos {
+			for _, repo := range reposUnderGithubOwner {
 				if !repo.GetFork() {
 					filteredRepos = append(filteredRepos, repo)
 				}
 			}
-			repos = filteredRepos
+			reposUnderGithubOwner = filteredRepos
+
+			log.Println("Length of repos under GitHub owner after filtering forked repos:", len(reposUnderGithubOwner))
+			repoStr := ""
+			for _, repo := range reposUnderGithubOwner {
+				repoStr += repo.GetName() + ", "
+			}
+			log.Println(repoStr)
 		}
 
-		// TODO Compare repos with existing Gitea repos, find deleted repos in GitHub-side
+		diffSet := common.CompareGitHubAndGitea(reposUnderGithubOwner, reposUnderGiteaOwner)
 
+		log.Println("Start migrating the repos that exist on Gitea but not on GitHub")
+		for idx, giteaRepo := range diffSet.MirrorRepoNotExistOnGithub {
+			log.Printf("(%d/%d) Mirror repo %s is not on GitHub", idx+1, len(diffSet.MirrorRepoNotExistOnGithub), giteaRepo.CloneURL)
+
+			// TODO handle strategy for this case
+			log.Println("Start deleting", giteaRepo.Name, "on Gitea")
+			giteaClient.DeleteRepo(cliOpts.MigrationCliOption.GiteaOwner, giteaRepo.Name)
+			log.Println("Deleted repo on Gitea:", giteaRepo.Name)
+		}
+		log.Println("Completed.")
+
+		log.Println("Start migrating the RepoExistBothSideByNameButNotMirrorRepoOnGitea")
+		for idx, repos := range diffSet.RepoExistBothSideByNameButNotMirrorRepoOnGitea {
+			log.Printf("(%d/%d) Has non-mirrored repo %s on Gitea, with same name as GitHub repo %s", idx+1, len(diffSet.RepoExistBothSideByNameButNotMirrorRepoOnGitea), repos.GiteaRepo.CloneURL, repos.GithubRepo.GetCloneURL())
+
+			// TODO handle strategy for this case
+			log.Println("Start deleting", repos.GiteaRepo.Name, "on Gitea")
+			giteaClient.DeleteRepo(cliOpts.MigrationCliOption.GiteaOwner, repos.GiteaRepo.Name)
+			log.Println("Deleted repo on Gitea:", repos.GiteaRepo.Name)
+
+			log.Println("Start migrating to Gitea")
+			giteaClient.MirrorGithubRepository(repos.GithubRepo, cliOpts.MigrationCliOption.GiteaOwner, envValues.GithubToken)
+			log.Println("Migrated repo on Gitea.")
+		}
+		log.Println("Completed.")
+
+		log.Println("Start migrating the RepoExistBothSideWithSameUrl")
+		for idx, repos := range diffSet.RepoExistBothSideWithSameUrl {
+			log.Printf("(%d/%d) GitHub repo %s is already mirrored on Gitea repo %s", idx+1, len(diffSet.RepoExistBothSideWithSameUrl), repos.GithubRepo.GetCloneURL(), repos.GiteaRepo.CloneURL)
+
+			// TODO handle strategy for this case
+			// log.Println("Start syncing", repos.GithubRepo.GetName(), "to Gitea")
+			// giteaClient.MirrorSync(repos.GiteaRepo.Owner.UserName, repos.GiteaRepo.Name)
+			// log.Println("Synced repo on Gitea:", repos.GithubRepo.GetName())
+		}
+		log.Println("Completed.")
+
+		log.Println("Start migrating the GitHub repo that is not mirrored on Gitea")
+		for idx, repo := range diffSet.GithubRepoNotMirroredOnGitea {
+			log.Printf("(%d/%d) GitHub repo %s is not mirrored on Gitea", idx+1, len(diffSet.GithubRepoNotMirroredOnGitea), repo.GetCloneURL())
+
+			log.Println("Start migrating to Gitea")
+			giteaClient.MirrorGithubRepository(repo, cliOpts.MigrationCliOption.GiteaOwner, envValues.GithubToken)
+			log.Println("Migrated repo on Gitea:", repo.GetName())
+		}
 	}
 
 	if err := rootCmd.Execute(); err != nil {

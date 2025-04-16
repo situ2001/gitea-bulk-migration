@@ -1,8 +1,6 @@
 package client
 
 import (
-	"fmt"
-
 	"github/situ2001.com/gitea-bulk-migration/common"
 
 	"code.gitea.io/sdk/gitea"
@@ -56,7 +54,7 @@ func (c *GiteaClient) ListUserReposAll(giteaUser string) ([]*gitea.Repository, e
 }
 
 // It mirrors a GitHub repository to Gitea.
-func (c *GiteaClient) MirrorGithubRepository(repo *github.Repository, giteaUser string, githubToken string) error {
+func (c *GiteaClient) MirrorGithubRepository(repo *github.Repository, giteaUser string, githubToken string) (*gitea.Repository, error) {
 	migratedRepo, _, err := c.MigrateRepo(gitea.MigrateRepoOption{
 		Service:   gitea.GitServiceGithub,
 		RepoName:  repo.GetName(),
@@ -70,11 +68,8 @@ func (c *GiteaClient) MirrorGithubRepository(repo *github.Repository, giteaUser 
 	})
 
 	if err != nil {
-		fmt.Println("Error migrating repository:", repo.GetName(), "with error:", err.Error())
-		return err
+		return nil, err
 	}
 
-	fmt.Println("Successfully migrated repository:", migratedRepo.OriginalURL)
-
-	return nil
+	return migratedRepo, nil
 }
