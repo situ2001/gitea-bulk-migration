@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 
 	"github/situ2001.com/gitea-bulk-migration/common"
 
@@ -40,8 +39,6 @@ func (c *GitHubClient) GetAllGitHubRepoByUsername(option *common.MigrationCliOpt
 			break
 		}
 
-		fmt.Println("Page:", listOption.Page)
-
 		repos = append(repos, sourcesRepo...)
 
 		if resp.LastPage == listOption.Page {
@@ -50,8 +47,6 @@ func (c *GitHubClient) GetAllGitHubRepoByUsername(option *common.MigrationCliOpt
 
 		listOption.Page++
 	}
-
-	fmt.Println("Total repositories:", len(repos))
 
 	return repos, nil
 }
