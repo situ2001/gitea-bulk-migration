@@ -99,6 +99,9 @@ func Execute() {
 
 		diffSet := common.CompareGitHubAndGitea(reposUnderGithubOwner, reposUnderGiteaOwner)
 
+		// TODO print the diffSet in a more readable way
+		// TODO before starting, prompt the user to confirm the migration
+
 		log.Println("Start migrating the repos that exist on Gitea but not on GitHub")
 		for idx, giteaRepo := range diffSet.MirrorRepoNotExistOnGithub {
 			log.Printf("(%d/%d) Mirror repo %s is not on GitHub", idx+1, len(diffSet.MirrorRepoNotExistOnGithub), giteaRepo.CloneURL)
