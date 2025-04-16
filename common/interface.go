@@ -9,7 +9,7 @@ type CliOption struct {
 	// the URL to proxy server, which is used to access GitHub
 	HttpProxy string
 
-	// TODO the path to the file where the output log will be saved
+	// TODO not supported yet, currently, log will be output to path `pwd` + "/migrate-{timestamp}.log"
 	// outputLogFilePath string
 
 	// Options for migration
