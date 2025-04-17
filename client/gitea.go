@@ -63,8 +63,7 @@ func (c *GiteaClient) MirrorGithubRepository(repo *github.Repository, giteaUser 
 		AuthToken: githubToken,
 		Mirror:    true,
 		Private:   *repo.Private,
-		LFS:       true,
-		// TODO How about MirrorInterval?
+		LFS:       c.migrationOption.ShouldMigrateLFS,
 	})
 
 	if err != nil {
