@@ -27,7 +27,7 @@ jobs:
     - name: Test
       run: go test -v
 
-    - name: collect build artifacts
+    - name: Collect build artifacts
       uses: actions/upload-artifact@v4
       with:
         path: gitea-bulk-migration
