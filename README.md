@@ -7,17 +7,17 @@ A command-line tool mainly for bulk migrating repositories from GitHub to Gitea 
 This tool helps you migrate all GitHub repositories in a specified organization or user account to a Gitea instance as mirrors.
 
 - Mirror GitHub repositories to Gitea.
-- CLI can be executed in multiple runs, without needing to re-migrate already migrated repositories.
+- CLI can be executed in multiple runs to migrate repositories in batches and reflect the latest state of the GitHub repositories.
 - Handle existing repositories on Gitea with configurable strategies (skip, abort, delete, overwrite) in a robust way.
 - Sync existing mirror repositories, if there are any.
-- Filter repositories by type (all, public, private, etc.)
 - Include or exclude forked repositories
+- HTTP proxy support for GitHub API requests.
 
 ## Prerequisites
 
 - Go 1.24 or higher
-- GitHub personal access token with appropriate permissions: All repositories + metadata read-only access
-- Gitea instance with admin access and API token with appropriate permissions: All repositories + repo write access + user read-only access
+- GitHub personal access token with appropriate permissions: *All repositories + metadata read-only access*
+- Gitea API token with appropriate permissions: *All repositories + repo write access + user read-only access*
 
 ## Installation
 
@@ -82,11 +82,11 @@ This tool compares repositories between GitHub and Gitea. For each repo under a 
       2. If not, append the repo to the list of `MirrorRepoNotExistOnGithub`
 2. Finally, push remaining GitHub repos to the list of `GithubRepoNotMirroredOnGitea`
 
-> Should notice that GitHub repos are owned by only one owner, the Gitea's too. The reason is that the tool will detect the repo by only the repo name without owner name. So to avoid the conflict, the tool will only check the repo name under the same owner.
+> To avoid conflict, should notice that GitHub repos being migrated should be owned by only one owner, the Gitea's too. Since the tool will detect the repo by only the repo name without owner name.
 
-You can specific the strategy to handle the cases below:
+You can specify the strategy to handle the cases below:
 
-| Repo category                                    | cmd arg                       | Value                     |
+| Repo category after comparison                   | cmd arg                       | Value                     |
 | ------------------------------------------------ | ----------------------------- | ------------------------- |
 | `RepoExistBothSideByNameButNotMirrorRepoOnGitea` | `--on-duplication-non-mirror` | skip, overwrite, abort    |
 | `RepoExistBothSideWithSameUrl`                   | `--on-duplication`            | skip, overwrite, abort    |
