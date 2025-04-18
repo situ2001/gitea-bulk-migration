@@ -10,8 +10,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-
-  build:
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -21,13 +21,45 @@ jobs:
       with:
         go-version: '1.24.2'
 
-    - name: Build
-      run: go build -v -o gitea-bulk-migration
-
     - name: Test
-      run: go test -v
+      run: go test -v ./...
 
-    - name: Collect build artifacts
+  build:
+    name: Build
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [linux, windows, darwin]
+        arch: [amd64, arm64]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24.2'
+
+    - name: Build
+      env:
+        GOOS: ${{ matrix.os }}
+        GOARCH: ${{ matrix.arch }}
+      run: |
+        OUTPUT_NAME=gitea-bulk-migration
+        if [ "${{ matrix.os }}" = "windows" ]; then
+          OUTPUT_NAME=gitea-bulk-migration.exe
+        fi
+
+        go build -v -o $OUTPUT_NAME
+
+        mkdir -p dist
+        tar -czf dist/gitea-bulk-migration-${{ matrix.os }}-${{ matrix.arch }}.tar.gz $OUTPUT_NAME
+        echo "Built for ${{ matrix.os }}-${{ matrix.arch }}"
+
+    - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        path: gitea-bulk-migration
+        name: gitea-bulk-migration-${{ matrix.os }}-${{ matrix.arch }}
+        path: dist/gitea-bulk-migration-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+        retention-days: 7
