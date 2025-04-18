@@ -49,6 +49,8 @@ Then, run the tool with the following command
 
 ```shell
 # Migrate all repositories from a GitHub user account to Gitea user or organization. Suitable for first-time migration.
+# You can specify --migrate-fork-repo to include forked repositories.
+# You can also specify --http-proxy to set a proxy for the HTTP requests to GitHub.
 ./gitea-bulk-migration --gitea-owner <user or org name>
 
 # If you want a second run, you can use the additional flags to handle existing repositories on Gitea. 
