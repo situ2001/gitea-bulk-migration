@@ -1,6 +1,6 @@
 # gitea-bulk-migration
 
-A command-line tool mainly for bulk migrating repositories from GitHub to Gitea as mirrors.
+A command-line tool for bulk migrating GitHub repositories to Gitea as mirrors, with support for incremental syncs and configurable migration strategies
 
 ## Overview
 
