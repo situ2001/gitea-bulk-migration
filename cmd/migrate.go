@@ -128,8 +128,12 @@ func Execute() {
 				log.Fatalln("Abort migration because the repo already exists on Gitea but not on GitHub.")
 			case common.DeletedRepoStrategyDelete:
 				log.Println("Start deleting", giteaRepo.FullName, "on Gitea")
-				giteaClient.DeleteRepo(cliOpts.MigrationCliOption.GiteaOwner, giteaRepo.Name)
-				log.Println("Deleted repo on Gitea:", giteaRepo.FullName)
+				_, err := giteaClient.DeleteRepo(cliOpts.MigrationCliOption.GiteaOwner, giteaRepo.Name)
+				if err != nil {
+					log.Println("Error deleting repo on Gitea:", err)
+				} else {
+					log.Println("Deleted repo on Gitea:", giteaRepo.FullName)
+				}
 			}
 		}
 		log.Println("Completed.")
@@ -145,12 +149,21 @@ func Execute() {
 				log.Fatalln("Abort migration because the repo already exists on Gitea but not on GitHub.")
 			case common.DuplicationOnNonMirrorStrategyOverwrite:
 				log.Println("Start deleting", repos.GiteaRepo.FullName, "on Gitea")
-				giteaClient.DeleteRepo(cliOpts.MigrationCliOption.GiteaOwner, repos.GiteaRepo.Name)
-				log.Println("Deleted repo on Gitea:", repos.GiteaRepo.FullName)
+				_, err := giteaClient.DeleteRepo(cliOpts.MigrationCliOption.GiteaOwner, repos.GiteaRepo.Name)
+				if err != nil {
+					log.Println("Error deleting repo on Gitea:", err)
+					continue
+				} else {
+					log.Println("Deleted repo on Gitea:", repos.GiteaRepo.FullName)
+				}
 
 				log.Println("Start migrating to Gitea")
-				giteaClient.MirrorGithubRepository(repos.GithubRepo, cliOpts.MigrationCliOption.GiteaOwner, envValues.GithubToken)
-				log.Println("Migrated repo on Gitea:", repos.GithubRepo.GetFullName())
+				_, err = giteaClient.MirrorGithubRepository(repos.GithubRepo, cliOpts.MigrationCliOption.GiteaOwner, envValues.GithubToken)
+				if err != nil {
+					log.Println("Error migrating repo to Gitea:", err)
+				} else {
+					log.Println("Migrated repo on Gitea:", repos.GithubRepo.GetFullName())
+				}
 			}
 		}
 		log.Println("Completed.")
@@ -160,8 +173,12 @@ func Execute() {
 			log.Printf("(%d/%d) GitHub repo %s is not mirrored on Gitea", idx+1, len(diffSet.GithubRepoNotMirroredOnGitea), repo.GetCloneURL())
 
 			log.Println("Start migrating to Gitea")
-			giteaClient.MirrorGithubRepository(repo, cliOpts.MigrationCliOption.GiteaOwner, envValues.GithubToken)
-			log.Println("Migrated repo on Gitea:", repo.GetFullName())
+			_, err := giteaClient.MirrorGithubRepository(repo, cliOpts.MigrationCliOption.GiteaOwner, envValues.GithubToken)
+			if err != nil {
+				log.Println("Error migrating repo to Gitea:", err)
+			} else {
+				log.Println("Migrated repo on Gitea:", repo.GetFullName())
+			}
 		}
 
 		log.Println("Start migrating the Repos Mirrored on Both Sides")
@@ -170,8 +187,12 @@ func Execute() {
 
 			if cliOpts.MigrationCliOption.TriggerSyncForExistingMirrorRepo {
 				log.Println("Start triggering sync for repo on Gitea")
-				giteaClient.MirrorSync(repos.GiteaRepo.Owner.UserName, repos.GiteaRepo.Name)
-				log.Println("Triggered sync for repo on Gitea:", repos.GithubRepo.GetFullName())
+				_, err := giteaClient.MirrorSync(repos.GiteaRepo.Owner.UserName, repos.GiteaRepo.Name)
+				if err != nil {
+					log.Println("Error triggering sync for repo on Gitea:", err)
+				} else {
+					log.Println("Triggered sync for repo on Gitea:", repos.GithubRepo.GetFullName())
+				}
 			}
 		}
 		log.Println("Completed.")
