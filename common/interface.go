@@ -20,9 +20,6 @@ type MigrationCliOption struct {
 	// The owner name of the repository after migration
 	GiteaOwner string
 
-	// same as value of `(github.RepositoryListByAuthenticatedUserOptions).Type`
-	TypeOfRepoBeingMigrated string
-
 	ShouldMirrorRepo bool
 
 	ShouldMigrateForkedRepo bool

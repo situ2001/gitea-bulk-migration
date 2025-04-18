@@ -35,7 +35,6 @@ func init() {
 
 	// Migration options
 	rootCmd.PersistentFlags().StringVar(&cliOpts.MigrationCliOption.GiteaOwner, "gitea-owner", "", "the owner name of the repository after migration, can be username or org name")
-	rootCmd.PersistentFlags().StringVar(&cliOpts.MigrationCliOption.TypeOfRepoBeingMigrated, "repo-type", "all", "the type of repository being migrated (all, owner, public, private, member)")
 	rootCmd.PersistentFlags().BoolVar(&cliOpts.MigrationCliOption.ShouldMigrateForkedRepo, "migrate-fork-repo", false, "whether migrate forked repos from GitHub user")
 	rootCmd.PersistentFlags().BoolVar(&cliOpts.MigrationCliOption.ShouldMigrateLFS, "migrate-lfs", false, "whether migrate the LFS of GitHub repo or not")
 	rootCmd.PersistentFlags().BoolVar(&cliOpts.MigrationCliOption.TriggerSyncForExistingMirrorRepo, "sync-mirror-repo", false, "Should sync the repo already exists in Gitea and GitHub, after migration")

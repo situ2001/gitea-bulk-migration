@@ -27,7 +27,7 @@ func (c *GitHubClient) GetAllGitHubRepoByUsername(option *common.MigrationCliOpt
 
 	for {
 		sourcesRepo, resp, err := c.Repositories.ListByAuthenticatedUser(context.Background(), &github.RepositoryListByAuthenticatedUserOptions{
-			Type:        option.TypeOfRepoBeingMigrated,
+			Type:        "owner", // Here, we only get the repositories that the user owns to avoid same-name repositories conflict
 			ListOptions: *listOption,
 		})
 
