@@ -1,6 +1,8 @@
 package common
 
 import (
+	"strings"
+
 	"code.gitea.io/sdk/gitea"
 	"github.com/google/go-github/v71/github"
 )
@@ -37,16 +39,20 @@ type MigrationDifferenceSet struct {
 func CompareGitHubAndGitea(githubRepos []*github.Repository, giteaRepos []*gitea.Repository) MigrationDifferenceSet {
 	diffSet := MigrationDifferenceSet{}
 
+	// Create maps using lowercase names for comparison
 	githubReposMapByRepoName := make(map[string]*github.Repository)
 	githubReposMapByOriginalURL := make(map[string]*github.Repository)
 	for _, repo := range githubRepos {
-		githubReposMapByRepoName[repo.GetName()] = repo
+		repoNameLower := strings.ToLower(repo.GetName())
+		githubReposMapByRepoName[repoNameLower] = repo
 		githubReposMapByOriginalURL[repo.GetCloneURL()] = repo
 	}
 
 	for _, giteaRepo := range giteaRepos {
 		if !giteaRepo.Mirror {
-			githubRepoByName, existOnGithubByName := githubReposMapByRepoName[giteaRepo.Name]
+			// Use lowercase for comparison
+			giteaRepoNameLower := strings.ToLower(giteaRepo.Name)
+			githubRepoByName, existOnGithubByName := githubReposMapByRepoName[giteaRepoNameLower]
 
 			// if the repo exists on gitea when compared with github by name and it is not a mirror repo
 			if existOnGithubByName {
